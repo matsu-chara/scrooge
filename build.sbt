@@ -301,7 +301,30 @@ lazy val scroogeSbtPlugin = Project(
   publishMavenStyle := false,
   repository in bintray := "sbt-plugins",
   licenses += (("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))),
-  bintrayOrganization in bintray := Some("twittercsl")
+  bintrayOrganization in bintray := Some("twittercsl"),
+   // https://github.com/sbt/sbt/issues/3325
+  ScriptedPlugin.scriptedSettings.filterNot(_.key.key == libraryDependencies.key),
+  libraryDependencies ++= {
+    CrossVersion.binarySbtVersion(scriptedSbt.value) match {
+      case "0.13" =>
+        Seq(
+          "org.scala-sbt" % "scripted-sbt" % scriptedSbt.value % scriptedConf.toString,
+          "org.scala-sbt" % "sbt-launch" % scriptedSbt.value % scriptedLaunchConf.toString
+        )
+      case _ =>
+        Seq(
+          "org.scala-sbt" %% "scripted-sbt" % scriptedSbt.value % scriptedConf.toString,
+          "org.scala-sbt" % "sbt-launch" % scriptedSbt.value % scriptedLaunchConf.toString
+        )
+    }
+  },
+  scriptedLaunchOpts := { scriptedLaunchOpts.value ++
+    Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+  },
+  ScriptedPlugin.scriptedLaunchOpts ++= Seq(
+    "-Dplugin.version=" + version.value
+  ),
+  scriptedBufferLog := false
 ).dependsOn(scroogeGenerator)
 
 lazy val scroogeLinter = Project(

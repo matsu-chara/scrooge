@@ -1,0 +1,25 @@
+# runs scroogeGen task and assert generated sources
+
+> scroogeGen
+
+# assert generated scala sources
+$ exists target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/Person.scala
+$ exists target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/PersonService.scala
+$ exists target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/PersonService$FinagleClient.scala
+$ exists target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/PersonService$FinagleService.scala
+
+> clean
+
+# assert generated scala sources are cleaned
+$ absent target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/Person.scala
+$ absent target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/PersonService.scala
+$ absent target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/PersonService$FinagleClient.scala
+$ absent target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/PersonService$FinagleService.scala
+
+> compile
+
+# assert generated sources via compile
+$ exists target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/Person.scala
+$ exists target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/PersonService.scala
+$ exists target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/PersonService$FinagleClient.scala
+$ exists target/scala-2.12/src_managed/main/thrift/com/twitter/scripted/thrift/PersonService$FinagleService.scala
