@@ -155,7 +155,7 @@ object ScroogeSBT extends AutoPlugin {
 
   // Dependencies included in the `thrift` configuration will be used
   // in both compile and test.
-  val thriftConfig = config("thrift")
+  val ThriftConfig = config("thrift")
 
   /**
    * these settings will go into both the compile and test configurations.
@@ -188,16 +188,17 @@ object ScroogeSBT extends AutoPlugin {
     //
     // returns Seq[File] - directories that include thrift files
     scroogeUnpackDeps := {
-      IO.createDirectory(scroogeThriftExternalSourceFolder.value)
+      val scroogeThriftExternalSourceFolderV = scroogeThriftExternalSourceFolder.value
+      IO.createDirectory(scroogeThriftExternalSourceFolderV)
       val whitelist = scroogeThriftDependencies.value.toSet
       val dependencies =
-        Classpaths.managedJars(thriftConfig, classpathTypes.value, update.value) ++
+        Classpaths.managedJars(ThriftConfig, classpathTypes.value, update.value) ++
         filter(Classpaths.managedJars(configuration.value, classpathTypes.value, update.value), whitelist)
 
       val paths = dependencies.map { dep =>
         val module = dep.get(AttributeKey[ModuleID]("module-id"))
         module.flatMap { m =>
-          val dest = new File(scroogeThriftExternalSourceFolder.value, m.name)
+          val dest = new File(scroogeThriftExternalSourceFolderV, m.name)
           IO.createDirectory(dest)
           val thriftFiles = IO.unzip(dep.data, dest, "*.thrift").toSeq
           if (thriftFiles.isEmpty) {
@@ -224,9 +225,11 @@ object ScroogeSBT extends AutoPlugin {
         } else {
           Long.MaxValue
         }
+
+      val scroogeThriftOutputFolderV = scroogeThriftOutputFolder.value
       val outputsLastModified: Seq[Long] =
         scroogeLanguages.value.flatMap { language =>
-          (scroogeThriftOutputFolder.value ** generatedExtensionPattern(language)).get.map(_.lastModified)
+          (scroogeThriftOutputFolderV ** generatedExtensionPattern(language)).get.map(_.lastModified)
         }
       val oldestOutput: Long =
         if (outputsLastModified.nonEmpty) {
@@ -239,44 +242,59 @@ object ScroogeSBT extends AutoPlugin {
 
     // actually run scrooge
     scroogeGen := {
+      val streamsV = streams.value
+      val scroogeIsDirtyV = scroogeIsDirty.value
+      val scroogeThriftOutputFolderV = scroogeThriftOutputFolder.value
+      val scroogeThriftSourcesV = scroogeThriftSources.value
+      val scroogeThriftIncludesV = scroogeThriftIncludes.value
+      val scroogeThriftNamespaceMapV = scroogeThriftNamespaceMap.value
+      val scroogeBuildOptionsV = scroogeBuildOptions.value
+      val scroogeDisableStrictV = scroogeDisableStrict.value
+      val scroogeScalaWarnOnJavaNSFallbackV = scroogeScalaWarnOnJavaNSFallback.value
+      val scroogeDefaultJavaNamespaceV = scroogeDefaultJavaNamespace.value
+      val scroogeLanguagesV = scroogeLanguages.value
+
       // for some reason, sbt sometimes calls us multiple times, often with no source files.
-      if (scroogeIsDirty.value && scroogeThriftSources.value.nonEmpty) {
-        streams.value.log.info("Generating scrooge thrift for %s ...".format(scroogeThriftSources.value.mkString(", ")))
-        scroogeLanguages.value.foreach { language =>
+      if (scroogeIsDirtyV && scroogeThriftSourcesV.nonEmpty) {
+        streamsV.log.info("Generating scrooge thrift for %s ...".format(scroogeThriftSourcesV.mkString(", ")))
+        scroogeLanguagesV.foreach { language =>
           compile(
-            streams.value.log,
-            scroogeThriftOutputFolder.value,
-            scroogeThriftSources.value.toSet,
-            scroogeThriftIncludes.value.toSet,
-            scroogeThriftNamespaceMap.value,
+            streamsV.log,
+            scroogeThriftOutputFolderV,
+            scroogeThriftSourcesV.toSet,
+            scroogeThriftIncludesV.toSet,
+            scroogeThriftNamespaceMapV,
             language,
-            scroogeBuildOptions.value.toSet,
-            scroogeDisableStrict.value,
-            scroogeScalaWarnOnJavaNSFallback.value,
-            scroogeDefaultJavaNamespace.value
+            scroogeBuildOptionsV.toSet,
+            scroogeDisableStrictV,
+            scroogeScalaWarnOnJavaNSFallbackV,
+            scroogeDefaultJavaNamespaceV
           )
         }
       }
       scroogeLanguages.value.flatMap { language =>
-        (scroogeThriftOutputFolder.value ** generatedExtensionPattern(language)).get
+        (scroogeThriftOutputFolderV ** generatedExtensionPattern(language)).get
       }
     },
     sourceGenerators += scroogeGen
   )
 
   val packageThrift = mappings in (Compile, packageBin) ++= {
-    (if ((scroogePublishThrift in Compile).value) (scroogeThriftSources in Compile).value else Nil).map { file =>
-      file -> s"${name.value}/${file.name}"
-    }
+    val scroogePublishThriftV = (scroogePublishThrift in Compile).value
+    val scroogeThriftSourcesV = (scroogeThriftSources in Compile).value
+
+    val nameV = name.value
+    val files = if (scroogePublishThriftV) scroogeThriftSourcesV else Nil
+    files.map { file => file -> s"$nameV/${file.name}" }
   }
 
   private[this] val generatedSources = mappings in (Compile, packageSrc) ++= {
     val thriftOutputFolder = (scroogeThriftOutputFolder in Compile).value
-    ((thriftOutputFolder ** "*") filter { _.isFile }).get pair relativeTo(thriftOutputFolder)
+    ((thriftOutputFolder ** "*") filter { _.isFile }).get pair (file => IO.relativize(thriftOutputFolder, file))
   }
 
   override lazy val projectSettings =
-    Seq(ivyConfigurations += thriftConfig) ++
+    Seq(ivyConfigurations += ThriftConfig) ++
     inConfig(Test)(genThriftSettings) ++
     inConfig(Compile)(genThriftSettings) :+ packageThrift :+ generatedSources
 

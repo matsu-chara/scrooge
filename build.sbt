@@ -131,10 +131,10 @@ val scalacTwoTenOptions = Seq(
   "-encoding", "utf8")
 
 // settings for projects that are scala 2.10
-val settingsWithTwoTen =
+val settingsCrossCompiledWithSbtOne =
   sharedSettingsWithoutScalaVersion ++
   Seq(
-    scalaVersion := "2.10.6",
+    crossSbtVersions := Vector("0.13.16", "1.0.0-RC2"),
     scalacOptions := scalacTwoTenOptions,
     javacOptions ++= Seq("-source", "1.7", "-target", "1.7", "-Xlint:unchecked"),
     javacOptions in doc := Seq("-source", "1.7")
@@ -290,11 +290,10 @@ lazy val scroogeSbtPlugin = Project(
   id = "scrooge-sbt-plugin",
   base = file("scrooge-sbt-plugin")
 ).settings(
-  settingsWithTwoTen,
+  settingsCrossCompiledWithSbtOne,
   bintrayPublishSettings,
   buildInfoSettings
 ).settings(
-  scalaVersion := "2.10.6",
   sourceGenerators in Compile += buildInfo,
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "com.twitter",
