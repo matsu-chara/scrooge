@@ -302,7 +302,14 @@ lazy val scroogeSbtPlugin = Project(
   publishMavenStyle := false,
   repository in bintray := "sbt-plugins",
   licenses += (("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))),
-  bintrayOrganization in bintray := Some("twittercsl")
+  bintrayOrganization in bintray := Some("twittercsl"),
+  scriptedSettings,
+  scriptedLaunchOpts ++= Seq(
+    "-Dscrooge.version=" + version.value,
+    "-Dfinagle.version=" + finagleVersion,
+    "-Dlibthrift.version=" + "0.9.2"
+  ),
+  scriptedBufferLog := false
 ).dependsOn(scroogeGenerator)
 
 lazy val scroogeLinter = Project(
